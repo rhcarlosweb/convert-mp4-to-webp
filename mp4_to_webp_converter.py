@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from pathlib import Path
 import subprocess
 import threading
@@ -78,7 +78,9 @@ class VideoConverter(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        self.config_file = Path.home() / '.mp4_to_webp_converter.json'
+        # Change config file location to project directory
+        self.config_file = Path(__file__).parent / 'mp4_to_webp_converter.json'
+        
         self.presets = {
             "Banner Ads - High Quality": {
                 "lossless": True,
