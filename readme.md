@@ -40,7 +40,7 @@ A powerful desktop application built with Python and CustomTkinter that converts
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/mp4-to-webp-converter.git
+   git clone https://github.com/rhcarlosweb/convert-mp4-to-webp.git
    ```
 
 2. Install required Python packages:
@@ -113,4 +113,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-If you encounter any issues or have questions, please [open an issue](https://github.com/yourusername/mp4-to-webp-converter/issues) on GitHub.
+If you encounter any issues or have questions, please [open an issue](https://github.com/rhcarlosweb/convert-mp4-to-webp/issues) on GitHub.
