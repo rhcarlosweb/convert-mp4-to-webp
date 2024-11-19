@@ -111,8 +111,8 @@ class VideoConverter(ctk.CTk):
 
         # Configure window
         self.title("MP4 to WebP Converter")
-        self.geometry("800x700")  # Increased window size
-        self.minsize(700, 600)    # Added minimum window size
+        self.geometry("800x400")  # Increased window size
+        self.minsize(1240, 900)    # Added minimum window size
         ctk.set_appearance_mode("dark")
         
         # Create main frame with padding
