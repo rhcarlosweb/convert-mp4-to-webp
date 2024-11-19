@@ -457,7 +457,9 @@ class VideoConverter(ctk.CTk):
             command = [
                 'ffmpeg',
                 '-i', file_path,
-                '-vf', filter_string
+                '-vf', filter_string,
+                '-threads', '8',  # Utilizar 8 threads para processamento
+                '-movflags', '+faststart',  # Otimização para início rápido
             ]
 
             if is_lossless:
@@ -467,6 +469,7 @@ class VideoConverter(ctk.CTk):
                     '-quality', '100',
                     '-compression_level', str(compression_value),
                     '-preset', 'drawing',
+                    '-tune', 'animation',  # Otimizado para animações
                 ])
             else:
                 command.extend([
@@ -474,6 +477,7 @@ class VideoConverter(ctk.CTk):
                     '-lossless', '0',
                     '-quality', str(compression_value),
                     '-preset', 'picture',
+                    '-tune', 'animation',  # Otimizado para animações
                 ])
 
             command.extend([
@@ -481,7 +485,7 @@ class VideoConverter(ctk.CTk):
                 '-metadata', 'alpha_mode="1"',
                 '-auto-alt-ref', '0',
                 '-pix_fmt', 'yuva420p',
-                '-an',
+                '-an',  # Remove áudio
                 '-vsync', '0',
                 '-y',
                 output_path
