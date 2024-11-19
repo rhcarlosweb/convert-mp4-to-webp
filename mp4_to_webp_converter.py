@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 import threading
 import os
+import json
 
 class FileListFrame(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
@@ -76,6 +77,37 @@ class FileListFrame(ctk.CTkFrame):
 class VideoConverter(ctk.CTk):
     def __init__(self):
         super().__init__()
+        
+        self.config_file = Path.home() / '.mp4_to_webp_converter.json'
+        self.presets = {
+            "Banner Ads - High Quality": {
+                "lossless": True,
+                "compression": 6,
+                "keep_fps": False,
+                "fps": "24",
+                "use_all_frames": True,
+                "start_frame": "0",
+                "end_frame": ""
+            },
+            "Banner Ads - Balanced": {
+                "lossless": False,
+                "compression": 85,
+                "keep_fps": False,
+                "fps": "20",
+                "use_all_frames": True,
+                "start_frame": "0",
+                "end_frame": ""
+            },
+            "Banner Ads - Small Size": {
+                "lossless": False,
+                "compression": 65,
+                "keep_fps": False,
+                "fps": "15",
+                "use_all_frames": True,
+                "start_frame": "0",
+                "end_frame": ""
+            }
+        }
 
         # Configure window
         self.title("MP4 to WebP Converter")
@@ -94,6 +126,48 @@ class VideoConverter(ctk.CTk):
             font=("Arial", 28, "bold")
         )
         self.title_label.pack(pady=(20, 10))
+        
+        # Add Presets Section before Settings Section
+        self.presets_frame = ctk.CTkFrame(self.main_frame)
+        self.presets_frame.pack(fill="x", padx=10, pady=10)
+        
+        self.presets_title = ctk.CTkLabel(
+            self.presets_frame,
+            text="Presets",
+            font=("Arial", 16, "bold")
+        )
+        self.presets_title.pack(pady=5)
+        
+        # Presets dropdown
+        self.preset_var = ctk.StringVar(value="Custom")
+        self.preset_dropdown = ctk.CTkOptionMenu(
+            self.presets_frame,
+            values=["Custom"] + list(self.presets.keys()),
+            variable=self.preset_var,
+            command=self.load_preset,
+            width=200
+        )
+        self.preset_dropdown.pack(pady=5)
+        
+        # Save/Load Config buttons
+        self.config_buttons_frame = ctk.CTkFrame(self.presets_frame)
+        self.config_buttons_frame.pack(fill="x", pady=5)
+        
+        self.save_config_btn = ctk.CTkButton(
+            self.config_buttons_frame,
+            text="Save Current Settings",
+            command=self.save_config,
+            width=150
+        )
+        self.save_config_btn.pack(side="left", padx=5)
+        
+        self.save_preset_btn = ctk.CTkButton(
+            self.config_buttons_frame,
+            text="Save as New Preset",
+            command=self.save_new_preset,
+            width=150
+        )
+        self.save_preset_btn.pack(side="right", padx=5)
         
         # Settings Section
         self.settings_frame = ctk.CTkFrame(self.main_frame)
@@ -327,6 +401,9 @@ class VideoConverter(ctk.CTk):
         )
         self.progress_label.pack(side="left", padx=5)
 
+        # Load saved settings
+        self.load_config()
+
     def toggle_compression_mode(self):
         is_lossless = self.lossless_var.get()
         if is_lossless:
@@ -543,6 +620,119 @@ class VideoConverter(ctk.CTk):
         thread = threading.Thread(target=self.convert_all_files)
         thread.daemon = True
         thread.start()
+
+    def save_config(self):
+        """Save current settings to config file"""
+        config = {
+            "lossless": self.lossless_var.get(),
+            "compression": self.compression_slider.get(),
+            "keep_fps": self.keep_fps_var.get(),
+            "fps": self.fps_var.get(),
+            "use_all_frames": self.use_all_frames_var.get(),
+            "start_frame": self.start_frame_var.get(),
+            "end_frame": self.end_frame_var.get(),
+            "last_preset": self.preset_var.get(),
+            "presets": self.presets
+        }
+        
+        try:
+            with open(self.config_file, 'w') as f:
+                json.dump(config, f)
+            self.show_message("Settings saved successfully!")
+        except Exception as e:
+            self.show_message(f"Error saving settings: {str(e)}", "error")
+
+    def load_config(self):
+        """Load settings from config file"""
+        try:
+            if self.config_file.exists():
+                with open(self.config_file, 'r') as f:
+                    config = json.load(f)
+                
+                # Update presets with saved ones
+                if "presets" in config:
+                    self.presets.update(config["presets"])
+                    self.preset_dropdown.configure(
+                        values=["Custom"] + list(self.presets.keys())
+                    )
+                
+                # Load last used preset if available
+                if "last_preset" in config and config["last_preset"] != "Custom":
+                    self.preset_var.set(config["last_preset"])
+                    self.load_preset(config["last_preset"])
+                else:
+                    # Load individual settings
+                    self.apply_settings(config)
+        except Exception as e:
+            print(f"Error loading config: {str(e)}")
+
+    def load_preset(self, preset_name):
+        """Load settings from selected preset"""
+        if preset_name == "Custom":
+            return
+            
+        if preset_name in self.presets:
+            self.apply_settings(self.presets[preset_name])
+
+    def apply_settings(self, settings):
+        """Apply the given settings to the UI"""
+        if "lossless" in settings:
+            self.lossless_var.set(settings["lossless"])
+            self.toggle_compression_mode()
+        
+        if "compression" in settings:
+            self.compression_slider.set(settings["compression"])
+            self.update_compression_label(settings["compression"])
+            
+        if "keep_fps" in settings:
+            self.keep_fps_var.set(settings["keep_fps"])
+            self.toggle_fps_entry()
+            
+        if "fps" in settings:
+            self.fps_var.set(settings["fps"])
+            
+        if "use_all_frames" in settings:
+            self.use_all_frames_var.set(settings["use_all_frames"])
+            self.toggle_frame_entries()
+            
+        if "start_frame" in settings:
+            self.start_frame_var.set(settings["start_frame"])
+            
+        if "end_frame" in settings:
+            self.end_frame_var.set(settings["end_frame"])
+
+    def save_new_preset(self):
+        """Save current settings as a new preset"""
+        dialog = ctk.CTkInputDialog(
+            text="Enter preset name:",
+            title="Save New Preset"
+        )
+        preset_name = dialog.get_input()
+        
+        if preset_name:
+            self.presets[preset_name] = {
+                "lossless": self.lossless_var.get(),
+                "compression": self.compression_slider.get(),
+                "keep_fps": self.keep_fps_var.get(),
+                "fps": self.fps_var.get(),
+                "use_all_frames": self.use_all_frames_var.get(),
+                "start_frame": self.start_frame_var.get(),
+                "end_frame": self.end_frame_var.get()
+            }
+            
+            self.preset_dropdown.configure(
+                values=["Custom"] + list(self.presets.keys())
+            )
+            self.preset_var.set(preset_name)
+            self.save_config()
+            self.show_message(f"Preset '{preset_name}' saved!")
+
+    def show_message(self, message, level="info"):
+        """Show a popup message"""
+        if level == "error":
+            messagebox.showerror("Error", message)
+        else:
+            messagebox.showinfo("Information", message)
 
 if __name__ == "__main__":
     app = VideoConverter()
