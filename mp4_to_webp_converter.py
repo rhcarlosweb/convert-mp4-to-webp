@@ -79,45 +79,62 @@ class VideoConverter(ctk.CTk):
 
         # Configure window
         self.title("MP4 to WebP Converter")
-        self.geometry("600x600")
+        self.geometry("800x700")  # Increased window size
+        self.minsize(700, 600)    # Added minimum window size
         ctk.set_appearance_mode("dark")
         
-        # Create main frame
+        # Create main frame with padding
         self.main_frame = ctk.CTkFrame(self)
-        self.main_frame.pack(pady=20, padx=20, fill="both", expand=True)
+        self.main_frame.pack(pady=10, padx=10, fill="both", expand=True)
         
-        # Title label
+        # Title label with improved styling
         self.title_label = ctk.CTkLabel(
             self.main_frame,
             text="MP4 to WebP Converter",
-            font=("Arial", 24, "bold")
+            font=("Arial", 28, "bold")
         )
-        self.title_label.pack(pady=20)
+        self.title_label.pack(pady=(20, 10))
         
-        # Frame para opções de codificação
-        self.encoding_frame = ctk.CTkFrame(self.main_frame)
-        self.encoding_frame.pack(fill="x", pady=10)
+        # Settings Section
+        self.settings_frame = ctk.CTkFrame(self.main_frame)
+        self.settings_frame.pack(fill="x", padx=10, pady=10)
         
-        # Checkbox para modo lossless
+        # Settings Title
+        self.settings_title = ctk.CTkLabel(
+            self.settings_frame,
+            text="Conversion Settings",
+            font=("Arial", 16, "bold")
+        )
+        self.settings_title.pack(pady=5)
+        
+        # Encoding Options Frame
+        self.encoding_frame = ctk.CTkFrame(self.settings_frame)
+        self.encoding_frame.pack(fill="x", padx=10, pady=5)
+        
+        # Lossless checkbox with tooltip
         self.lossless_var = ctk.BooleanVar(value=True)
         self.lossless_checkbox = ctk.CTkCheckBox(
             self.encoding_frame,
             text="Lossless Mode",
             variable=self.lossless_var,
-            command=self.toggle_compression_mode
+            command=self.toggle_compression_mode,
+            font=("Arial", 12)
         )
-        self.lossless_checkbox.pack(side="left", padx=10)
+        self.lossless_checkbox.pack(side="left", padx=10, pady=5)
         
-        # Label para o slider
+        # Compression controls in a separate frame
+        self.compression_control_frame = ctk.CTkFrame(self.encoding_frame)
+        self.compression_control_frame.pack(side="left", fill="x", expand=True, padx=10)
+        
         self.compression_label = ctk.CTkLabel(
-            self.encoding_frame,
-            text="Compression Level (0-6):"
+            self.compression_control_frame,
+            text="Compression Level (0-6):",
+            font=("Arial", 12)
         )
-        self.compression_label.pack(side="left", padx=10)
+        self.compression_label.pack(side="left", padx=5)
         
-        # Slider
         self.compression_slider = ctk.CTkSlider(
-            self.encoding_frame,
+            self.compression_control_frame,
             from_=0,
             to=6,
             number_of_steps=6,
@@ -128,154 +145,187 @@ class VideoConverter(ctk.CTk):
         self.compression_slider.pack(side="left", padx=10)
         
         self.compression_value_label = ctk.CTkLabel(
-            self.encoding_frame,
+            self.compression_control_frame,
             text="6 (Max)",
-            width=70
+            width=70,
+            font=("Arial", 12)
         )
         self.compression_value_label.pack(side="left", padx=5)
         
-        # File selection buttons frame
-        self.button_frame = ctk.CTkFrame(self.main_frame)
-        self.button_frame.pack(fill="x", pady=10)
+        # Frame Controls Section
+        self.frames_section = ctk.CTkFrame(self.main_frame)
+        self.frames_section.pack(fill="x", padx=10, pady=10)
         
-        # File selection button
-        self.select_button = ctk.CTkButton(
-            self.button_frame,
-            text="Add Files",
-            command=self.select_files,
-            height=40,
-            width=120
+        self.frames_title = ctk.CTkLabel(
+            self.frames_section,
+            text="Frame Settings",
+            font=("Arial", 16, "bold")
         )
-        self.select_button.pack(side="left", padx=5)
+        self.frames_title.pack(pady=5)
         
-        # Clear files button
-        self.clear_button = ctk.CTkButton(
-            self.button_frame,
-            text="Clear All",
-            command=self.clear_files,
-            height=40,
-            width=120,
-            fg_color="darkred"
-        )
-        self.clear_button.pack(side="left", padx=5)
-        
-        # File list
-        self.file_list = FileListFrame(self.main_frame)
-        self.file_list.pack(fill="both", expand=True, pady=10)
-        
-        # Convert button
-        self.convert_button = ctk.CTkButton(
-            self.main_frame,
-            text="Convert All to WebP",
-            command=self.start_conversion,
-            height=40
-        )
-        self.convert_button.pack(pady=20)
-        
-        # Overall progress label
-        self.progress_label = ctk.CTkLabel(
-            self.main_frame,
-            text=""
-        )
-        self.progress_label.pack(pady=10)
-        
-        # Frame para controles de Frames e FPS
-        self.frames_control_frame = ctk.CTkFrame(self.main_frame)
-        self.frames_control_frame.pack(fill="x", pady=10, padx=10)
-        
-        # Frame Info (Original)
-        self.frame_info_frame = ctk.CTkFrame(self.frames_control_frame)
-        self.frame_info_frame.pack(fill="x", pady=5)
+        # Video Info Frame
+        self.video_info_frame = ctk.CTkFrame(self.frames_section)
+        self.video_info_frame.pack(fill="x", padx=10, pady=5)
         
         self.fps_info_label = ctk.CTkLabel(
-            self.frame_info_frame,
+            self.video_info_frame,
             text="Original FPS: -",
-            width=120
+            font=("Arial", 12)
         )
-        self.fps_info_label.pack(side="left", padx=5)
+        self.fps_info_label.pack(side="left", padx=10)
         
         self.frames_info_label = ctk.CTkLabel(
-            self.frame_info_frame,
+            self.video_info_frame,
             text="Total Frames: -",
-            width=120
+            font=("Arial", 12)
         )
-        self.frames_info_label.pack(side="left", padx=5)
+        self.frames_info_label.pack(side="left", padx=10)
         
-        # Frame Selection Frame
-        self.frame_selection_frame = ctk.CTkFrame(self.frames_control_frame)
-        self.frame_selection_frame.pack(fill="x", pady=5)
+        # Frame Selection Controls
+        self.frame_controls = ctk.CTkFrame(self.frames_section)
+        self.frame_controls.pack(fill="x", padx=10, pady=5)
         
-        # Start Frame
+        # Use all frames checkbox
+        self.use_all_frames_var = ctk.BooleanVar(value=True)
+        self.use_all_frames_checkbox = ctk.CTkCheckBox(
+            self.frame_controls,
+            text="Use all frames",
+            variable=self.use_all_frames_var,
+            command=self.toggle_frame_entries,
+            font=("Arial", 12)
+        )
+        self.use_all_frames_checkbox.pack(side="left", padx=10)
+        
+        # Frame range entries
+        self.frame_range_frame = ctk.CTkFrame(self.frame_controls)
+        self.frame_range_frame.pack(side="left", padx=10)
+        
         self.start_frame_label = ctk.CTkLabel(
-            self.frame_selection_frame,
-            text="Start Frame:",
-            width=80
+            self.frame_range_frame,
+            text="Start:",
+            font=("Arial", 12)
         )
         self.start_frame_label.pack(side="left", padx=5)
         
         self.start_frame_var = ctk.StringVar(value="0")
         self.start_frame_entry = ctk.CTkEntry(
-            self.frame_selection_frame,
-            width=60,
+            self.frame_range_frame,
+            width=70,
             textvariable=self.start_frame_var
         )
         self.start_frame_entry.pack(side="left", padx=5)
         
-        # End Frame
         self.end_frame_label = ctk.CTkLabel(
-            self.frame_selection_frame,
-            text="End Frame:",
-            width=80
+            self.frame_range_frame,
+            text="End:",
+            font=("Arial", 12)
         )
         self.end_frame_label.pack(side="left", padx=5)
         
         self.end_frame_var = ctk.StringVar(value="")
         self.end_frame_entry = ctk.CTkEntry(
-            self.frame_selection_frame,
-            width=60,
+            self.frame_range_frame,
+            width=70,
             textvariable=self.end_frame_var
         )
         self.end_frame_entry.pack(side="left", padx=5)
         
-        # FPS Control Frame
-        self.fps_control_frame = ctk.CTkFrame(self.frames_control_frame)
-        self.fps_control_frame.pack(fill="x", pady=5)
+        # FPS Controls
+        self.fps_frame = ctk.CTkFrame(self.frames_section)
+        self.fps_frame.pack(fill="x", padx=10, pady=5)
         
-        # Output FPS
+        self.keep_fps_var = ctk.BooleanVar(value=False)
+        self.keep_fps_checkbox = ctk.CTkCheckBox(
+            self.fps_frame,
+            text="Keep original FPS",
+            variable=self.keep_fps_var,
+            command=self.toggle_fps_entry,
+            font=("Arial", 12)
+        )
+        self.keep_fps_checkbox.pack(side="left", padx=10)
+        
+        self.fps_control_frame = ctk.CTkFrame(self.fps_frame)
+        self.fps_control_frame.pack(side="left", padx=10)
+        
         self.fps_label = ctk.CTkLabel(
             self.fps_control_frame,
             text="Output FPS:",
-            width=80
+            font=("Arial", 12)
         )
         self.fps_label.pack(side="left", padx=5)
         
         self.fps_var = ctk.StringVar(value="24")
         self.fps_entry = ctk.CTkEntry(
             self.fps_control_frame,
-            width=60,
+            width=70,
             textvariable=self.fps_var
         )
         self.fps_entry.pack(side="left", padx=5)
+
+        # File Management Section
+        self.file_section = ctk.CTkFrame(self.main_frame)
+        self.file_section.pack(fill="both", expand=True, padx=10, pady=10)
         
-        # Keep original FPS checkbox
-        self.keep_fps_var = ctk.BooleanVar(value=False)
-        self.keep_fps_checkbox = ctk.CTkCheckBox(
-            self.fps_control_frame,
-            text="Keep original FPS",
-            variable=self.keep_fps_var,
-            command=self.toggle_fps_entry
-        )
-        self.keep_fps_checkbox.pack(side="left", padx=10)
+        # File section header frame
+        self.file_header_frame = ctk.CTkFrame(self.file_section)
+        self.file_header_frame.pack(fill="x", padx=5, pady=5)
         
-        # Use all frames checkbox
-        self.use_all_frames_var = ctk.BooleanVar(value=True)
-        self.use_all_frames_checkbox = ctk.CTkCheckBox(
-            self.fps_control_frame,
-            text="Use all frames",
-            variable=self.use_all_frames_var,
-            command=self.toggle_frame_entries
+        self.file_section_title = ctk.CTkLabel(
+            self.file_header_frame,
+            text="File Management",
+            font=("Arial", 16, "bold")
         )
-        self.use_all_frames_checkbox.pack(side="left", padx=10)
+        self.file_section_title.pack(side="left", pady=5, padx=5)
+        
+        # File selection buttons
+        self.select_button = ctk.CTkButton(
+            self.file_header_frame,
+            text="Add Files",
+            command=self.select_files,
+            width=120,
+            font=("Arial", 12),
+            fg_color="#2B7A0B",
+            hover_color="#1E5508"
+        )
+        self.select_button.pack(side="right", padx=5)
+        
+        self.clear_button = ctk.CTkButton(
+            self.file_header_frame,
+            text="Clear All",
+            command=self.clear_files,
+            width=120,
+            font=("Arial", 12),
+            fg_color="#8B0000",
+            hover_color="#660000"
+        )
+        self.clear_button.pack(side="right", padx=5)
+        
+        # File List Frame
+        self.file_list = FileListFrame(self.file_section)
+        self.file_list.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Convert button and progress frame
+        self.convert_frame = ctk.CTkFrame(self.file_section)
+        self.convert_frame.pack(fill="x", padx=5, pady=5)
+        
+        self.convert_button = ctk.CTkButton(
+            self.convert_frame,
+            text="Convert",
+            command=self.start_conversion,
+            height=40,
+            width=120,
+            font=("Arial", 12, "bold"),
+            fg_color="#1E88E5",
+            hover_color="#1565C0"
+        )
+        self.convert_button.pack(side="left", padx=5)
+        
+        self.progress_label = ctk.CTkLabel(
+            self.convert_frame,
+            text="",
+            font=("Arial", 12)
+        )
+        self.progress_label.pack(side="left", padx=5)
 
     def toggle_compression_mode(self):
         is_lossless = self.lossless_var.get()
@@ -292,21 +342,32 @@ class VideoConverter(ctk.CTk):
     def update_compression_label(self, value):
         value_int = int(value)
         if self.lossless_var.get():
-            label_text = f"{value_int} ({'Max' if value_int == 6 else 'Min' if value_int == 0 else 'Med'})"
+            if value_int == 6:
+                label_text = "6 (Max)"
+            elif value_int == 0:
+                label_text = "0 (Min)"
+            else:
+                label_text = f"{value_int}"
         else:
-            label_text = f"Q: {value_int}"
+            label_text = f"Quality: {value_int}"
         self.compression_value_label.configure(text=label_text)
 
     def toggle_fps_entry(self):
         if self.keep_fps_var.get():
             self.fps_entry.configure(state="disabled")
+            self.fps_label.configure(text_color="gray")
         else:
             self.fps_entry.configure(state="normal")
+            self.fps_label.configure(text_color="white")
 
     def toggle_frame_entries(self):
         state = "disabled" if self.use_all_frames_var.get() else "normal"
+        text_color = "gray" if self.use_all_frames_var.get() else "white"
+        
         self.start_frame_entry.configure(state=state)
         self.end_frame_entry.configure(state=state)
+        self.start_frame_label.configure(text_color=text_color)
+        self.end_frame_label.configure(text_color=text_color)
 
     def get_video_info(self, file_path):
         """Get video FPS and frame count using FFprobe"""
