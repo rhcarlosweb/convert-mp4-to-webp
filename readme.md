@@ -2,6 +2,8 @@
 
 A powerful desktop application built with Python and CustomTkinter that converts MP4 videos to WebP animations with advanced optimization options and file size control.
 
+**Author**: [Rhuan Carlos](https://rhuan.dev)
+
 ![Application Screenshot](screenshot.png)
 
 ## Features
