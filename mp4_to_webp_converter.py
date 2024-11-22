@@ -476,6 +476,12 @@ class VideoConverter(ctk.CTk):
         if self.keep_fps_var.get():
             self.fps_entry.configure(state="disabled")
             self.fps_label.configure(text_color="gray")
+            # Get the first file's FPS if available
+            files = self.file_list.get_files()
+            if files:
+                fps, _ = self.get_video_info(files[0])
+                if fps:
+                    self.fps_var.set(f"{fps:.2f}")
         else:
             self.fps_entry.configure(state="normal")
             self.fps_label.configure(text_color="white")
@@ -534,7 +540,7 @@ class VideoConverter(ctk.CTk):
                     if fps and frames:
                         self.fps_info_label.configure(text=f"Original FPS: {fps:.2f}")
                         self.frames_info_label.configure(text=f"Frames: {frames}")
-                        if self.keep_fps_var.get():
+                        if self.keep_fps_var.get():  # Add this check
                             self.fps_var.set(f"{fps:.2f}")
 
     def clear_files(self):
