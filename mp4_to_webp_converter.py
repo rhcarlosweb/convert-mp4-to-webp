@@ -24,23 +24,23 @@ class FileListFrame(ctk.CTkFrame):
         file_frame = ctk.CTkFrame(self.scrollable)
         file_frame.pack(fill="x", padx=5, pady=2)
         
-        # File name label
+        # File name label (reduzido para acomodar status maior)
         file_label = ctk.CTkLabel(
             file_frame,
             text=Path(file_path).name,
-            wraplength=350,
+            wraplength=250,  # Reduzido de 350
             justify="left"
         )
         file_label.pack(side="left", padx=5)
         
-        # Status label
+        # Status label (aumentado para mostrar mais informações)
         status_label = ctk.CTkLabel(
             file_frame,
             text="Pending",
-            width=100,
-            justify="right"
+            width=400,  # Aumentado de 100
+            justify="left"
         )
-        status_label.pack(side="right", padx=5)
+        status_label.pack(side="left", padx=5)
         
         # Remove button
         remove_btn = ctk.CTkButton(
@@ -634,11 +634,12 @@ class VideoConverter(ctk.CTk):
                         max_size_bytes = max_size_mb * 1024 * 1024
                         
                         if converted_size <= max_size_bytes:
-                            # Arquivo está dentro do tamanho desejado
-                            self.file_list.update_status(
-                                file_path,
-                                f"Done ({ratio:.1f}%) - Size: {current_size_mb:.2f}MB - FPS: {target_fps}"
+                            settings_info = (
+                                f"✓ {current_size_mb:.1f}MB | "
+                                f"FPS: {target_fps} | "
+                                f"Quality: {compression_value}"
                             )
+                            self.file_list.update_status(file_path, settings_info)
                             return
                         else:
                             # Primeiro tenta reduzir FPS
@@ -658,11 +659,13 @@ class VideoConverter(ctk.CTk):
                             attempt += 1
                             continue
                     else:
-                        # Modo normal - apenas uma conversão
-                        self.file_list.update_status(
-                            file_path,
-                            f"Done ({ratio:.1f}%) - Size: {current_size_mb:.2f}MB"
+                        settings_info = (
+                            f"✓ {current_size_mb:.1f}MB | "
+                            f"{'Lossless' if is_lossless else 'Lossy'} | "
+                            f"{'Comp' if is_lossless else 'Quality'}: {compression_value} | "
+                            f"FPS: {target_fps}"
                         )
+                        self.file_list.update_status(file_path, settings_info)
                         return
                 else:
                     self.file_list.update_status(file_path, "Error")
