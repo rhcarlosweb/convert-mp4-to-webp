@@ -1,18 +1,24 @@
 # MP4 to WebP Converter
 
-A powerful desktop application built with Python and CustomTkinter that converts MP4 videos to WebP animations with advanced optimization options.
+A powerful desktop application built with Python and CustomTkinter that converts MP4 videos to WebP animations with advanced optimization options and file size control.
 
-![Application Screenshot](screenshot.png) <!-- You should add a screenshot of your app here -->
+![Application Screenshot](screenshot.png)
 
 ## Features
 
 - **User-Friendly Interface**: Clean and modern dark-themed GUI
 - **Batch Processing**: Convert multiple MP4 files simultaneously
-- **Customizable Settings**:
-  - Lossless/Lossy compression options
-  - Adjustable compression levels and quality
+- **Dual Configuration Modes**:
+  - Settings-based configuration
+  - Target file size optimization
+- **Advanced Compression Options**:
+  - Lossless/Lossy compression
+  - Adjustable compression levels (0-6) and quality (0-100)
+  - Smart file size optimization
+- **Frame Control**:
   - FPS control (keep original or set custom)
   - Frame range selection
+  - Automatic FPS adjustment for size optimization
 - **Preset System**:
   - Built-in presets for common use cases
   - Save and load custom presets
@@ -32,8 +38,9 @@ A powerful desktop application built with Python and CustomTkinter that converts
 - FFmpeg (must be installed and accessible in system PATH)
 - Required Python packages:
   ```
-  customtkinter
-  pillow
+  customtkinter>=5.2.0
+  Pillow>=10.0.0
+  pathlib>=1.0.1
   ```
 
 ## Installation
@@ -60,17 +67,22 @@ A powerful desktop application built with Python and CustomTkinter that converts
    python mp4_to_webp_converter.py
    ```
 
-2. Click "Add Files" to select MP4 files for conversion
+2. Choose Configuration Mode:
+   - **Settings Mode**: Manual control over all conversion parameters
+   - **File Size Mode**: Automatic optimization to meet target file size
 
-3. Adjust conversion settings:
+3. Add Files and Configure:
+   - Click "Add Files" to select MP4 files
+   - Choose a preset or adjust settings manually
+   - Set target file size (in File Size Mode)
+
+4. Adjust Advanced Settings (in Settings Mode):
    - Choose between lossless and lossy compression
    - Set compression level or quality
    - Configure FPS settings
    - Select specific frame ranges (optional)
 
-4. Click "Convert" to start the process
-
-5. Monitor progress in the file list
+5. Click "Convert" to start the process
 
 ## Advanced Settings
 
@@ -93,6 +105,15 @@ A powerful desktop application built with Python and CustomTkinter that converts
 - **FPS Options**: 
   - Keep original video FPS
   - Set custom FPS for output
+  - Automatic FPS optimization in File Size Mode
+
+### File Size Optimization
+
+- Set target file size in MB
+- Automatic adjustment of:
+  - FPS (down to 10 FPS minimum)
+  - Quality settings
+  - Compression parameters
 
 ## Contributing
 
