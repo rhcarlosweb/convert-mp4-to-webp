@@ -403,6 +403,47 @@ class VideoConverter(ctk.CTk):
         )
         self.progress_label.pack(side="left", padx=5)
 
+        # Modo de configuração
+        self.config_mode_var = ctk.StringVar(value="settings")  # Novo modo de configuração
+
+        # Frame para seleção de modo de configuração
+        self.config_mode_frame = ctk.CTkFrame(self.main_frame)
+        self.config_mode_frame.pack(fill="x", padx=10, pady=10)
+
+        self.settings_mode_radio = ctk.CTkRadioButton(
+            self.config_mode_frame,
+            text="Configuração via Ajustes",
+            variable=self.config_mode_var,
+            value="settings",
+            command=self.update_mode
+        )
+        self.settings_mode_radio.pack(side="left", padx=10)
+
+        self.file_size_mode_radio = ctk.CTkRadioButton(
+            self.config_mode_frame,
+            text="Configuração via Tamanho Máximo do Arquivo",
+            variable=self.config_mode_var,
+            value="file_size",
+            command=self.update_mode
+        )
+        self.file_size_mode_radio.pack(side="left", padx=10)
+
+        # Campo para tamanho máximo do arquivo
+        self.max_file_size_label = ctk.CTkLabel(
+            self.main_frame,
+            text="Tamanho Máximo do Arquivo (MB):",
+            font=("Arial", 12)
+        )
+        self.max_file_size_label.pack(pady=5)
+
+        self.max_file_size_var = ctk.StringVar(value="10")  # Valor padrão
+        self.max_file_size_entry = ctk.CTkEntry(
+            self.main_frame,
+            width=70,
+            textvariable=self.max_file_size_var
+        )
+        self.max_file_size_entry.pack(pady=5)
+
         # Load saved settings
         self.load_config()
 
@@ -504,95 +545,125 @@ class VideoConverter(ctk.CTk):
             self.file_list.update_status(file_path, "Converting...")
             
             output_path = str(Path(file_path).with_suffix('.webp'))
-            compression_value = int(self.compression_slider.get())
-            is_lossless = self.lossless_var.get()
             
-            # Prepare frame selection and FPS filter
-            filter_parts = ['scale=trunc(iw/2)*2:trunc(ih/2)*2']
-            
-            # Add frame selection if needed
-            if not self.use_all_frames_var.get():
-                try:
-                    start_frame = int(self.start_frame_var.get())
-                    end_frame = int(self.end_frame_var.get())
-                    if start_frame >= 0 and end_frame > start_frame:
-                        filter_parts.append(f'select=between(n\\,{start_frame}\\,{end_frame})')
-                except ValueError:
-                    self.file_list.update_status(file_path, "Invalid frame numbers")
-                    return
-            
-            # Add FPS filter
-            if not self.keep_fps_var.get():
-                try:
-                    target_fps = float(self.fps_var.get())
-                    filter_parts.append(f'fps={target_fps}')
-                except ValueError:
-                    self.file_list.update_status(file_path, "Invalid FPS value")
-                    return
-            
-            # Combine filters
-            filter_string = ','.join(filter_parts)
-            
-            command = [
-                'ffmpeg',
-                '-i', file_path,
-                '-vf', filter_string,
-                '-threads', '8',  # Utilizar 8 threads para processamento
-                '-movflags', '+faststart',  # Otimização para início rápido
-            ]
-
-            if is_lossless:
-                command.extend([
-                    '-vcodec', 'libwebp',
-                    '-lossless', '1',
-                    '-quality', '100',
-                    '-compression_level', str(compression_value),
-                    '-preset', 'drawing',
-                    '-tune', 'animation',  # Otimizado para animações
-                ])
+            # Configurações iniciais para modo de tamanho de arquivo
+            if self.config_mode_var.get() == "file_size":
+                compression_value = 100  # Mantém qualidade máxima inicialmente
+                target_fps = 30  # Começa com FPS alto
+                is_lossless = False  # Força modo lossy para controle de tamanho
+                fps_step = 5  # Quanto reduzir de FPS a cada tentativa
             else:
-                command.extend([
-                    '-vcodec', 'libwebp',
-                    '-lossless', '0',
-                    '-quality', str(compression_value),
-                    '-preset', 'picture',
-                    '-tune', 'animation',  # Otimizado para animações
-                ])
-
-            command.extend([
-                '-loop', '0',
-                '-metadata', 'alpha_mode="1"',
-                '-auto-alt-ref', '0',
-                '-pix_fmt', 'yuva420p',
-                '-an',  # Remove áudio
-                '-vsync', '0',
-                '-y',
-                output_path
-            ])
+                compression_value = int(self.compression_slider.get())
+                target_fps = float(self.fps_var.get())
+                is_lossless = self.lossless_var.get()
             
-            print(f"FFmpeg command: {' '.join(command)}")  # Para debug
+            max_attempts = 20
+            attempt = 0
             
-            process = subprocess.Popen(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                universal_newlines=True
-            )
-            
-            stdout, stderr = process.communicate()
-            
-            if process.returncode == 0:
-                original_size = os.path.getsize(file_path)
-                converted_size = os.path.getsize(output_path)
-                ratio = (converted_size / original_size) * 100
+            while attempt < max_attempts:
+                self.file_list.update_status(file_path, f"Trying FPS: {target_fps}, {'Compression: ' + str(compression_value) if is_lossless else 'Quality: ' + str(compression_value)}")
                 
-                self.file_list.update_status(
-                    file_path, 
-                    f"Done ({ratio:.1f}%)"
+                # Prepare frame selection and FPS filter
+                filter_parts = ['scale=trunc(iw/2)*2:trunc(ih/2)*2']
+                
+                # Add frame selection if needed
+                if not self.use_all_frames_var.get():
+                    try:
+                        start_frame = int(self.start_frame_var.get())
+                        end_frame = int(self.end_frame_var.get())
+                        if start_frame >= 0 and end_frame > start_frame:
+                            filter_parts.append(f'select=between(n\\,{start_frame}\\,{end_frame})')
+                    except ValueError:
+                        self.file_list.update_status(file_path, "Invalid frame numbers")
+                        return
+                
+                filter_parts.append(f'fps={target_fps}')
+                filter_string = ','.join(filter_parts)
+                
+                command = [
+                    'ffmpeg',
+                    '-i', file_path,
+                    '-vf', filter_string,
+                    '-threads', '8',
+                    '-movflags', '+faststart',
+                    '-vcodec', 'libwebp',
+                    '-lossless', '1' if is_lossless else '0',
+                    '-preset', 'drawing' if is_lossless else 'picture',
+                    '-tune', 'animation',
+                    '-loop', '0',
+                    '-metadata', 'alpha_mode="1"',
+                    '-auto-alt-ref', '0',
+                    '-pix_fmt', 'yuva420p',
+                    '-an',
+                    '-vsync', '0',
+                    '-y'
+                ]
+
+                # Adiciona os parâmetros específicos de qualidade/compressão
+                if is_lossless:
+                    command.extend(['-compression_level', str(compression_value)])
+                else:
+                    command.extend(['-quality', str(compression_value)])
+
+                command.append(output_path)
+                
+                process = subprocess.Popen(
+                    command,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True
                 )
-            else:
-                self.file_list.update_status(file_path, "Error")
-                print(f"FFmpeg error: {stderr}")
+                
+                stdout, stderr = process.communicate()
+                
+                if process.returncode == 0:
+                    converted_size = os.path.getsize(output_path)
+                    original_size = os.path.getsize(file_path)
+                    ratio = (converted_size / original_size) * 100
+                    current_size_mb = converted_size / (1024 * 1024)
+                    
+                    # Verifica tamanho do arquivo no modo file_size
+                    if self.config_mode_var.get() == "file_size":
+                        max_size_mb = float(self.max_file_size_var.get())
+                        max_size_bytes = max_size_mb * 1024 * 1024
+                        
+                        if converted_size <= max_size_bytes:
+                            # Arquivo está dentro do tamanho desejado
+                            self.file_list.update_status(
+                                file_path,
+                                f"Done ({ratio:.1f}%) - Size: {current_size_mb:.2f}MB - FPS: {target_fps}"
+                            )
+                            return
+                        else:
+                            # Primeiro tenta reduzir FPS
+                            if target_fps > 10:
+                                target_fps = max(10, target_fps - fps_step)
+                            # Se FPS já estiver no mínimo, começa a reduzir qualidade
+                            elif compression_value > 20:
+                                compression_value -= 3
+                            else:
+                                # Se não conseguir reduzir mais, mantém última versão
+                                self.file_list.update_status(
+                                    file_path,
+                                    f"Best possible: {current_size_mb:.2f}MB - FPS: {target_fps}"
+                                )
+                                return
+                            
+                            attempt += 1
+                            continue
+                    else:
+                        # Modo normal - apenas uma conversão
+                        self.file_list.update_status(
+                            file_path,
+                            f"Done ({ratio:.1f}%) - Size: {current_size_mb:.2f}MB"
+                        )
+                        return
+                else:
+                    self.file_list.update_status(file_path, "Error")
+                    print(f"FFmpeg error: {stderr}")
+                    return
+                    
+            self.file_list.update_status(file_path, "Could not reach target size")
             
         except Exception as e:
             self.file_list.update_status(file_path, f"Error: {str(e)}")
@@ -735,6 +806,20 @@ class VideoConverter(ctk.CTk):
             messagebox.showerror("Error", message)
         else:
             messagebox.showinfo("Information", message)
+
+    def update_mode(self):
+        mode = self.config_mode_var.get()
+        if mode == "file_size":
+            self.max_file_size_entry.configure(state="normal")
+            self.lossless_checkbox.configure(state="disabled")  # Desabilitar opções de ajustes
+            self.compression_slider.configure(state="disabled")
+            self.keep_fps_checkbox.configure(state="disabled")
+            # Adicione lógica para otimizar configurações com base no tamanho máximo do arquivo
+        else:
+            self.max_file_size_entry.configure(state="disabled")
+            self.lossless_checkbox.configure(state="normal")  # Habilitar opções de ajustes
+            self.compression_slider.configure(state="normal")
+            self.keep_fps_checkbox.configure(state="normal")
 
 if __name__ == "__main__":
     app = VideoConverter()
